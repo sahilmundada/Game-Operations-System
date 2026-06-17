@@ -237,8 +237,14 @@ elif page == "Matchmaking Pools":
                     "Group ID": df_groups["group_id"],
                     "Region": df_groups["region"],
                     "Player Count": df_groups["player_count"],
+                    "Avg MMR": df_groups["avg_mmr"].apply(lambda x: f"{x:.4f}" if pd.notnull(x) else "N/A"),
+                    "MMR Spread": df_groups["mmr_spread"].apply(lambda x: f"{x:.4f}" if pd.notnull(x) else "N/A"),
                     "Avg Ping": df_groups["avg_ping"].apply(lambda x: f"{x:.1f} ms"),
-                    "Skill Tiers": df_groups["skill_tiers"].apply(lambda x: ", ".join(x))
+                    "Ping Spread": df_groups["ping_spread"].apply(lambda x: f"{x:.1f} ms" if pd.notnull(x) else "N/A"),
+                    "Device Flag": df_groups["device_flag"].fillna("balanced"),
+                    "Fairness Score": df_groups["fairness_score"].apply(lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"),
+                    "Quality Label": df_groups["quality_label"].fillna("Balanced"),
+                    "Skill Tiers": df_groups["skill_tiers"].apply(lambda x: ", ".join(x) if isinstance(x, list) else str(x))
                 })
                 
                 st.dataframe(df_groups_show, use_container_width=True, hide_index=True)
@@ -248,6 +254,20 @@ elif page == "Matchmaking Pools":
                 
                 for g in groups:
                     if g["group_id"] == selected_group:
+                        st.markdown(f"#### Group Details: {selected_group}")
+                        c1, c2, c3, c4 = st.columns(4)
+                        with c1:
+                            st.metric("Fairness Score", f"{g.get('fairness_score', 0.0):.1f}", g.get('quality_label', 'N/A'))
+                        with c2:
+                            st.metric("Avg MMR", f"{g.get('avg_mmr', 0.0):.4f}", f"Spread: {g.get('mmr_spread', 0.0):.4f}", delta_color="off")
+                        with c3:
+                            st.metric("Avg Ping", f"{g.get('avg_ping', 0.0):.1f} ms", f"Spread: {g.get('ping_spread', 0.0):.1f} ms", delta_color="off")
+                        with c4:
+                            st.metric("Device Balance", g.get('device_flag', 'balanced').upper())
+                        
+                        st.markdown("**Device Breakdown:**")
+                        st.json(g.get("device_breakdown", {}))
+                        
                         st.write(f"**Players in {selected_group} ({len(g['players'])}):**")
                         st.info(", ".join(g["players"]))
             else:
@@ -354,6 +374,11 @@ elif page == "Submit Player Score":
                     
                     c_conf = res.get("confirmed_cheats", [])
                     st.write(f"**Confirmed Cheats (Both Signals Hit):** {', '.join(c_conf) if c_conf else 'None'}")
+                    
+                    st.markdown("---")
+                    st.write(f"**Assigned Match Group:** `{res.get('match_group')}`")
+                    if res.get("match_group_reason"):
+                        st.warning(f"**Matchmaking Exclusion Reason:** {res.get('match_group_reason')}")
                     
                     # Breakdown Expander
                     with st.expander("Detailed Suspicion Score Breakdown"):

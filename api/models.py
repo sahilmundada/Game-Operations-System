@@ -25,6 +25,7 @@ class ScoreSubmissionResponse(BaseModel):
     confirmed_cheats: Optional[List[str]] = []
     unconfirmed_hits: Optional[List[str]] = []
     score_breakdown: Optional[Dict[str, float]] = {}
+    match_group_reason: Optional[str] = None
 
 class LeaderboardEntry(BaseModel):
     player_id: str
@@ -68,6 +69,15 @@ class MatchGroupEntry(BaseModel):
     skill_tiers: List[str]
     avg_ping: float
     players: List[str]
+    avg_mmr: Optional[float] = 0.0
+    mmr_spread: Optional[float] = 0.0
+    ping_spread: Optional[float] = 0.0
+    device_breakdown: Optional[Dict[str, int]] = {}
+    device_flag: Optional[str] = "balanced"
+    avg_confidence: Optional[float] = 0.0
+    fairness_score: Optional[float] = 0.0
+    quality_label: Optional[str] = "Balanced"
+    skill_tiers_present: Optional[List[str]] = []
 
 class MatchmakingResponse(BaseModel):
     matchgroups: List[MatchGroupEntry]
@@ -119,6 +129,7 @@ class PlayerRecord(BaseModel):
     skill_score: Optional[float] = 0.0  # Aliased to predicted_skill_score for compatibility
     skill_tier: Optional[str] = "Bronze"
     match_group_id: Optional[str] = None
+    match_group_reason: Optional[str] = None
     submitted_at: Optional[str] = None
     
     # Upgrades v2

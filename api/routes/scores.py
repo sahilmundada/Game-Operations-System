@@ -116,6 +116,7 @@ async def submit_score(submission: ScoreSubmissionRequest, response: Response, r
             "predicted_skill_score": res['skill_score'],
             "skill_tier": res['skill_tier'],
             "match_group_id": res['match_group'],
+            "match_group_reason": res.get('match_group_reason'),
             "submitted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             
             # v2 Upgrades
@@ -167,5 +168,6 @@ async def submit_score(submission: ScoreSubmissionRequest, response: Response, r
         cheat_types_hit=res['cheat_types_hit'],
         confirmed_cheats=res['confirmed_cheats'],
         unconfirmed_hits=res['unconfirmed_hits'],
-        score_breakdown=res['score_breakdown']
+        score_breakdown=res['score_breakdown'],
+        match_group_reason=res.get('match_group_reason')
     )

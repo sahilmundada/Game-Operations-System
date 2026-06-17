@@ -48,6 +48,7 @@ class Player(Base):
     predicted_skill_score = Column(Float)
     skill_tier = Column(String, default="Bronze")
     match_group_id = Column(String)
+    match_group_reason = Column(String)
     submitted_at = Column(String)
     
     # v2 Upgrades: Confidence Score & History

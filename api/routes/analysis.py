@@ -72,6 +72,7 @@ async def run_analysis(request: Request):
                 "skill_score": res['skill_score'],
                 "skill_tier": res['skill_tier'],
                 "match_group_id": res['match_group'],
+                "match_group_reason": res.get('match_group_reason'),
                 
                 # Upgrades v2
                 "confidence_score": res['confidence_score'],
@@ -104,45 +105,34 @@ async def run_analysis(request: Request):
     )
 
 @router.get("/matchmaking", response_model=List[MatchGroupEntry])
-async def get_matchmaking_groups():
+async def get_matchmaking_groups(request: Request):
     """
     Returns the current match groups formed after running analysis.
     """
-    db = SessionLocal()
-    try:
-        # Query clean players with an active match group ID (confidence_score <= 40)
-        matched_players = db.query(Player).filter(
-            Player.confidence_score <= 40,
-            Player.match_group_id.isnot(None)
-        ).all()
-        
-        # Group players by match_group_id
-        groups = {}
-        for p in matched_players:
-            g_id = p.match_group_id
-            if g_id not in groups:
-                groups[g_id] = []
-            groups[g_id].append(p)
-            
-        group_entries = []
-        for g_id, g_players in sorted(groups.items()):
-            region = g_players[0].region
-            p_ids = [p.player_id for p in g_players]
-            skill_tiers = list(set(p.skill_tier for p in g_players))
-            avg_ping = float(np.mean([p.ping for p in g_players]))
-            
-            group_entries.append(
-                MatchGroupEntry(
-                    group_id=g_id,
-                    region=region,
-                    player_count=len(g_players),
-                    skill_tiers=sorted(skill_tiers),
-                    avg_ping=round(avg_ping, 2),
-                    players=p_ids
-                )
+    predictor = request.app.state.predictor
+    registry = getattr(predictor, '_group_registry', {})
+    
+    group_entries = []
+    for g_id, g in sorted(registry.items()):
+        group_entries.append(
+            MatchGroupEntry(
+                group_id=g['group_id'],
+                region=g['region'],
+                player_count=g['player_count'],
+                skill_tiers=g['skill_tiers_present'],
+                avg_ping=g['avg_ping'],
+                players=g['players'],
+                avg_mmr=g.get('avg_mmr', 0.0),
+                mmr_spread=g.get('mmr_spread', 0.0),
+                ping_spread=g.get('ping_spread', 0.0),
+                device_breakdown=g.get('device_breakdown', {}),
+                device_flag=g.get('device_flag', 'balanced'),
+                avg_confidence=g.get('avg_confidence', 0.0),
+                fairness_score=g.get('fairness_score', 0.0),
+                quality_label=g.get('quality_label', 'Balanced'),
+                skill_tiers_present=g['skill_tiers_present']
             )
-    finally:
-        db.close()
+        )
         
     return group_entries
 
